@@ -32,18 +32,22 @@ function! s:ShowContext()
     else
         echo "'" s:wordUnderCursor "' is not a context."    
     endif
+    silent! call repeat#set("\<Plug>ShowContext")
 endfunction
 
 function! s:ShowAll()
     setlocal foldmethod=syntax
     %foldopen!
     setlocal nofoldenable
+
+    silent! call repeat#set("\<Plug>ShowAll")
 endfunction  
 
 function! s:FoldAllProjects()
     setlocal foldmethod=syntax
     setlocal foldenable
     %foldclose! 
+    silent! call repeat#set("\<Plug>FoldAllProjects")
 endfunction
 
 " toggle @done context tag on a task
@@ -54,18 +58,19 @@ function! s:ToggleDone()
         let repl = line
         if (line =~ '@done')
             let repl = substitute(line, "@done\(.*\)", "", "g")
-            echo "undone!"
+            if &verbose > 1 | echo "undone!" | endif
         else
             let today = strftime(g:task_paper_date_format, localtime())
             let done_str = " @done(" . today . ")"
             let repl = substitute(line, "$", done_str, "g")
-            echo "done!"
+            if &verbose > 1 | echo "done!" | endif
         endif
         call setline(".", repl)
     else 
         echo "not a task."
     endif
 
+    silent! call repeat#set("\<Plug>ToggleDone")
 endfunction
 
 " toggle @cancelled context tag on a task
@@ -88,11 +93,12 @@ function! s:ToggleCancelled()
         echo "not a task."
     endif
 
+    silent! call repeat#set("\<Plug>ToggleCancelled")
 endfunction
 
 " Set up mappings
 noremap <unique> <script> <Plug>ToggleDone       :call <SID>ToggleDone()<CR>
-noremap <unique> <script> <Plug>ToggleCancelled   :call <SID>ToggleCancelled()<CR>
+noremap <unique> <script> <Plug>ToggleCancelled  :call <SID>ToggleCancelled()<CR>
 noremap <unique> <script> <Plug>ShowContext      :call <SID>ShowContext()<CR>
 noremap <unique> <script> <Plug>ShowAll          :call <SID>ShowAll()<CR>
 noremap <unique> <script> <Plug>FoldAllProjects  :call <SID>FoldAllProjects()<CR>
