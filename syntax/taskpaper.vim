@@ -16,29 +16,40 @@ else
   command! -nargs=+ HiLink hi def link <args>
 endif
 
-syn case ignore
+let b:has_conceal = has('conceal')
 
-syn match  taskpaperComment "^.*$"
-syn match  taskpaperProject       /^.\+:\s*$/
-syn match  taskpaperLineContinue ".$" contained
-syn match  taskpaperListItem  "^\s*[-+]\s\+" 
-syn match  taskpaperContext  "@[A-Za-z0-9_]\+"
-syn match  taskpaperDone "^\s*[-+]\s\+.*@[Dd]one.*$" conceal cchar=⚡
-syn match  taskpaperCancelled "^\s*[-+]\s\+.*@[Cc]ancelled.*$" conceal cchar=⌇
+" syn case ignore
 
-syn region taskpaperProjectFold start=/^.\+:\s*$/ end=/^\s*$/ transparent fold
+syn region taskpaperProject matchgroup=taskpaperProject start=/^\t*\%(\u[^:]\+\)/ end=/:\%(\s\+@\w\+\%((.*)\)\=\)\{-}$/ oneline contains=taskpaperContextText
+
+syn region taskpaperProjectFold start=/\_^\t*\%(.\+:\)/ end=/\_^\s*\_$/ transparent fold
+
+syn region taskpaperContextText start=/\s\+@/ end=/\%(\w\+\%((.*)\)\=\)\_s/ transparent oneline contained containedin=taskpaperProject,taskpaperTask contains=taskpaperContext,taskpaperContextProperty
+syn region taskpaperContext matchgroup=taskpaperDelimiter start=/@\%(\w\+\)\@=/ end=/\%(\_s\|(\)\@=/  contained oneline containedin=taskpaperContextText
+syn region taskpaperContextProperty matchgroup=taskpaperDelimiter start="(" end=")" contained containedin=taskpaperContextText
+
+syn region taskpaperTask matchgroup=taskpaperTaskDelimiter start=/^\%(\t\+\)[-+]\%(\s\+\)/ end=/\s*$/ oneline keepend contains=taskpaperDone,taskpaperCancelled,taskpaperContextText
+syn match taskpaperDone /\w.*\%(@[Dd]one\%((.*)\)\=\)\%(\s\+@\w\+\%((.*)\)\=\)\{}$/ contained containedin=taskpaperTask conceal cchar=⚡ contains=taskpaperContextText
+syn match taskpaperCancelled /\w.*\%(@[Cc]ance[l]\{1,2}ed\%((.*)\)\=\)\%(\s\+@\w\+\%((.*)\)\=\)\{}$/ contained containedin=taskpaperTask conceal cchar=⌇ contains=taskpaperContextText
+
 
 syn sync fromstart
 
-"highlighting for Taskpaper groups
-HiLink taskpaperListItem      Number
-HiLink taskpaperContext       Identifier
-HiLink taskpaperProject       Title
-HiLink taskpaperDone          NonText
-HiLink taskpaperCancelled     Ignore
-HiLink taskpaperComment       Comment
+HiLink taskpaperProject         Title
+HiLink taskpaperContext         Underlined
+HiLink taskpaperContextProperty Identifier
+HiLink taskpaperTask            String
+HiLink taskpaperTaskDelimiter   SpecialChar
+HiLink taskpaperDone            Conceal
+HiLink taskpaperCancelled       Ignore
+HiLink taskpaperDelimiter       Delimiter
+
+" syn match  taskpaperLineContinue ".$" contained
+" syn match  taskpaperComment "^.*$"
+" HiLink taskpaperComment         Normal
+
+
 
 let b:current_syntax = "taskpaper"
-
 delcommand HiLink
 " vim: ts=8
