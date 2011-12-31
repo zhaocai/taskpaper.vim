@@ -4,24 +4,61 @@
 " URL:		https://github.com/davidoc/taskpaper.vim
 " Last Change:  2011-02-15
 
-if exists("loaded_task_paper")
+">=< Buffer Load Guard [[[1 ==================================================
+if exists("b:loaded_taskpaper")
     finish
 endif
-let loaded_task_paper = 1
+let b:loaded_taskpaper = 1
 
-" Define a default date format
-if !exists('task_paper_date_format') | let task_paper_date_format = "%Y-%m-%d" | endif
+if !exists('b:undo_ftplugin')
+    let b:undo_ftplugin = ''
+endif
 
 "add '@' to keyword character set so that we can complete contexts as keywords
 setlocal iskeyword+=@-@
 
-"set default folding: by project (syntax), open (up to 99 levels), disabled 
-setlocal foldmethod=syntax
-setlocal foldlevel=99
-setlocal nofoldenable
+"set default folding: by project (syntax), open (up to 99 levels), disabled
+setlocal foldmethod=syntax foldlevel=99 nofoldenable wrap textwidth=0
+
+
+" Set &tabstop and &shiftwidth options for bulleted lists.
+setlocal tabstop=4 shiftwidth=4 softtabstop=4 noexpandtab
+
+" Automatic formatting for bulleted lists.
+setlocal formatoptions=tcron
+
+if &ft != 'taskpaper'
+    let b:undo_ftplugin .= '
+        \ | setlocal tabstop< shiftwidth< expandtab< softtabstop<
+        \ | setlocal formatoptions< iskeyword<
+        \ | setlocal foldmethod< foldlevel< nofoldenable< wrap< textwidth=0
+        \'
+endif
+
+map <buffer> <silent> <Leader>td <Plug>ToggleDone
+map <buffer> <silent> <Leader>tx <Plug>ToggleCancelled
+map <buffer> <silent> <Leader>tc <Plug>ShowContext
+map <buffer> <silent> <Leader>ta <Plug>ShowAll
+map <buffer> <silent> <Leader>tp <Plug>FoldAllProjects
+
+">=< Script Load Guard [[[1 ==================================================
+if exists("g:loaded_taskpaper")
+    finish
+endif
+let g:loaded_taskpaper = 1
+
+" Set up mappings
+noremap <unique> <script> <Plug>ToggleDone       :call <SID>ToggleDone()<CR>
+noremap <unique> <script> <Plug>ToggleCancelled  :call <SID>ToggleCancelled()<CR>
+noremap <unique> <script> <Plug>ShowContext      :call <SID>ShowContext()<CR>
+noremap <unique> <script> <Plug>ShowAll          :call <SID>ShowAll()<CR>
+noremap <unique> <script> <Plug>FoldAllProjects  :call <SID>FoldAllProjects()<CR>
+
+" Define a default date format
+if !exists('task_paper_date_format') | let task_paper_date_format = "%Y-%m-%d" | endif
 
 "show tasks from context under the cursor
-function! s:ShowContext()
+fun! s:ShowContext()
     let s:wordUnderCursor = expand("<cword>")
     if(s:wordUnderCursor =~ "@\k*")
         let @/ = "\\<".s:wordUnderCursor."\\>"
@@ -29,29 +66,33 @@ function! s:ShowContext()
         setlocal foldexpr=(getline(v:lnum)=~@/)?0:1
         setlocal foldmethod=expr foldlevel=0 foldcolumn=1 foldminlines=0
         setlocal foldenable
+        setlocal conceallevel=0
     else
-        echo "'" s:wordUnderCursor "' is not a context."    
+        echo "'" s:wordUnderCursor "' is not a context."
     endif
     silent! call repeat#set("\<Plug>ShowContext")
-endfunction
+endf
 
-function! s:ShowAll()
+fun! s:ShowAll()
     setlocal foldmethod=syntax
-    %foldopen!
+    silent! %foldopen!
     setlocal nofoldenable
+    setlocal conceallevel=0
 
     silent! call repeat#set("\<Plug>ShowAll")
-endfunction  
+endf
 
-function! s:FoldAllProjects()
+fun! s:FoldAllProjects()
     setlocal foldmethod=syntax
     setlocal foldenable
-    %foldclose! 
+    setlocal conceallevel=0
+    silent! %foldclose!
+
     silent! call repeat#set("\<Plug>FoldAllProjects")
-endfunction
+endf
 
 " toggle @done context tag on a task
-function! s:ToggleDone()
+fun! s:ToggleDone()
 
     let line = getline(".")
     if (line =~ '^\s*- ')
@@ -66,15 +107,15 @@ function! s:ToggleDone()
             if &verbose > 1 | echo "done!" | endif
         endif
         call setline(".", repl)
-    else 
+    else
         echo "not a task."
     endif
 
     silent! call repeat#set("\<Plug>ToggleDone")
-endfunction
+endf
 
 " toggle @cancelled context tag on a task
-function! s:ToggleCancelled()
+fun! s:ToggleCancelled()
 
     let line = getline(".")
     if (line =~ '^\s*- ')
@@ -89,22 +130,15 @@ function! s:ToggleCancelled()
             echo "cancelled!"
         endif
         call setline(".", repl)
-    else 
+    else
         echo "not a task."
     endif
 
     silent! call repeat#set("\<Plug>ToggleCancelled")
-endfunction
+endf
 
-" Set up mappings
-noremap <unique> <script> <Plug>ToggleDone       :call <SID>ToggleDone()<CR>
-noremap <unique> <script> <Plug>ToggleCancelled  :call <SID>ToggleCancelled()<CR>
-noremap <unique> <script> <Plug>ShowContext      :call <SID>ShowContext()<CR>
-noremap <unique> <script> <Plug>ShowAll          :call <SID>ShowAll()<CR>
-noremap <unique> <script> <Plug>FoldAllProjects  :call <SID>FoldAllProjects()<CR>
 
-map <buffer> <silent> <Leader>td <Plug>ToggleDone
-map <buffer> <silent> <Leader>tx <Plug>ToggleCancelled
-map <buffer> <silent> <Leader>tc <Plug>ShowContext
-map <buffer> <silent> <Leader>ta <Plug>ShowAll
-map <buffer> <silent> <Leader>tp <Plug>FoldAllProjects
+
+
+">=< Modeline [[[1 ===========================================================
+" vim: set ft=vim ts=4 sw=4 tw=78 fmr=[[[,]]] fdm=marker fdl=1 :
